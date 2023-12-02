@@ -43,11 +43,26 @@
 <div class="container" style="border-radius: 8px;">
     <h1>A Demo for messaging in WebRTC</h1>
 
-    <h3>
-        Run two instances of this webpage along with the server to test this
-        application.<br> Create an offer, and then send the message. <br>Check
-        the browser console to see the output.
-    </h3>
+<!--    <h3>-->
+<!--        Run two instances of this webpage along with the server to test this-->
+<!--        application.<br> Create an offer, and then send the message. <br>Check-->
+<!--        the browser console to see the output.-->
+<!--    </h3>-->
+
+
+    <div>
+        <div style="width: 270px; height: 215px; margin: 0px; border: 10px #333 solid; display:inline-block;">
+            <video autoplay="true" id="selfVideoSpace" style="width: 250px; height: 195px; background-color: #666;">
+
+            </video>
+        </div>
+
+        <div style="width: 270px; height: 215px; margin: 0px; border: 10px #333 solid; display:inline-block;">
+            <video autoplay="true" id="contactVideoSpace" style="width: 250px; height: 195px; background-color: #666;">
+
+            </video>
+        </div>
+    </div>
 
     <!--WebRTC related code-->
     <button type="button" class="btn btn-primary" onclick='createOffer()'>Create

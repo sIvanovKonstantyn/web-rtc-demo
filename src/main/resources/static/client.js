@@ -31,68 +31,61 @@ function send(message) {
     conn.send(JSON.stringify(message));
 }
 
-var peerConnection;
-var dataChannel;
+var localVideo = document.getElementById("selfVideoSpace");
+var remoteVideo = document.getElementById("contactVideoSpace");
+var localConnection;
 var input = document.getElementById("messageInput");
 
 function initialize() {
-    var configuration = null;
+   navigator.getUserMedia({video: true, audio: false}, function (stream) {
+       localVideo.srcObject = stream;
+       startPeerConnection(stream);
+   }, function (error) {
+       alert("Camera capture failed!")
+   });
+}
 
-    peerConnection = new RTCPeerConnection(configuration);
-
-    // Setup ice handling
-    peerConnection.onicecandidate = function(event) {
-        if (event.candidate) {
-            send({
-                event : "candidate",
-                data : event.candidate
-            });
+function startPeerConnection(stream) {
+    var configuration = {
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: true
+    }
+    localConnection = new RTCPeerConnection({configuration: configuration, iceServers: []});
+    stream.getTracks().forEach(
+        function (track) {
+            localConnection.addTrack(
+                track,
+                stream
+            );
         }
+    );
+
+    localConnection.ontrack = function (e) {
+        console.log("ontrack: " + e.streams[0]);
+        remoteVideo.srcObject = e.streams[0];
     };
-
-    // creating data channel
-    dataChannel = peerConnection.createDataChannel("dataChannel", {
-        reliable : true
-    });
-
-    dataChannel.onerror = function(error) {
-        console.log("Error occured on datachannel:", error);
-    };
-
-    // when we receive a message from the other peer, printing it on the console
-    dataChannel.onmessage = function(event) {
-        const chatSpace = document.getElementById("chat-space");
-        chatSpace.value = chatSpace.value + '\n[opponent]: ' + event.data;
-    };
-
-    dataChannel.onclose = function() {
-        console.log("data channel is closed");
-    };
-
-  	peerConnection.ondatachannel = function (event) {
-        dataChannel = event.channel;
-  	};
-
 }
 
 function createOffer() {
-    peerConnection.createOffer(function(offer) {
-        send({
-            event : "offer",
-            data : offer
-        });
-        peerConnection.setLocalDescription(offer);
-    }, function(error) {
-        alert("Error creating an offer");
-    });
+     localConnection.createOffer()
+            .then(offer => {
+                send({
+                        event : "offer",
+                        data : offer
+                    });
+                localConnection.setLocalDescription(offer);
+            })
+            .catch(e => {
+                console.error(e)
+            });
 }
 
 function handleOffer(offer) {
-    peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+    localConnection.setRemoteDescription(offer);
 
     // create and send an answer to an offer
-    peerConnection.createAnswer(function(answer) {
-        peerConnection.setLocalDescription(answer);
+    localConnection.createAnswer(function(answer) {
+        localConnection.setLocalDescription(answer);
         send({
             event : "answer",
             data : answer
@@ -100,15 +93,15 @@ function handleOffer(offer) {
     }, function(error) {
         alert("Error creating an answer");
     });
-
 };
 
 function handleCandidate(candidate) {
-    peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+    localConnection.addIceCandidate(candidate);
+    console.log("ice candidate added!!!");
 };
 
 function handleAnswer(answer) {
-    peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+    localConnection.setRemoteDescription(answer);
     console.log("connection established successfully!!");
 };
 
